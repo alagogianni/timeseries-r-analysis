@@ -10,39 +10,51 @@ Time series data carries temporal dependency that standard statistics can't capt
 
 ## What this project covers
 
-### 1. Italian Unemployment Rate (ARIMA) — trend-dominated series
+### 1. Italian Unemployment Rate (ARIMA) - trend-dominated series
 Monthly unemployment data (Eurostat, Jan 2022 – Mar 2026). The series shows a clear downward trend (9.1% → 5.5%) with no meaningful seasonality. First-differencing (d=1) achieves stationarity (ADF p=0.046); ACF/PACF of the differenced series show no significant lags, pointing to **ARIMA(0,1,0)** — a random walk, confirmed as the best fit by AIC (69.62) against 5 alternative specifications, and validated via Ljung-Box on residuals (p=0.247).
 
-### 2. Kalamata Rainfall (SARIMA) — seasonality-dominated series
+### 2. Kalamata Rainfall (SARIMA) - seasonality-dominated series
 Monthly rainfall (mm) from the Hellenic National Meteorological Service, Jan 2016 – Dec 2025 (120 observations, 5 missing values imputed via seasonal mean). KPSS confirms no trend (d=0); strong seasonal non-stationarity (period s=12) is resolved via seasonal differencing (D=1). ACF/PACF of the seasonally-differenced series point to **SARIMA(0,0,0)(1,1,1)[12]**, which outperforms `auto.arima`'s suggestion on both residual variance (1649 vs 2306) and Ljung-Box (p=0.867 vs p=0.053).
 
-### 3. Beer Sales (Classical Decomposition) — trend + seasonality combined
+### 3. Beer Sales (Classical Decomposition) - trend + seasonality combined
 Quarterly beer sales (2016–2019, millions of bottles). Multiplicative decomposition (Y = T × S × C × I) via centered moving averages isolates seasonal indices (Summer +74%, Winter −59%), a weak but positive trend (b=0.082M bottles/quarter, R²=0.167, not statistically significant at p=0.116), and cyclical residuals reaching +36.4% (Spring 2018) and −46.0% (Winter 2019) — attributable to exogenous economic factors rather than seasonality or trend.
 
-### ARIMA(0,1,0) forecast — Italian unemployment (2026–2028)
+### ARIMA(0,1,0) forecast - Italian unemployment (2026–2028)
 ![ARIMA forecast](results/figures/arima_forecast_unemployment.png)
 
-### SARIMA(0,0,0)(1,1,1)[12] forecast — Kalamata rainfall (2026)
+### SARIMA(0,0,0)(1,1,1)[12] forecast - Kalamata rainfall (2026)
 ![SARIMA forecast](results/figures/sarima_forecast_rainfall.png)
 
-### Classical decomposition — deseasonalized beer sales
+### Classical decomposition - deseasonalized beer sales
 ![Deseasonalized beer sales](results/figures/beer_sales_deseasonalized.png)
 
 ## Key findings
 
-| Series | Non-stationarity source | Model | Validation |
-|---|---|---|---|
-| Italy unemployment | Trend only | ARIMA(0,1,0) | AIC=69.62 (best of 6); Ljung-Box p=0.247 |
-| Kalamata rainfall | Seasonality only (s=12) | SARIMA(0,0,0)(1,1,1)[12] | Ljung-Box p=0.867 (vs p=0.053 for auto.arima) |
-| Beer sales | Trend + seasonality | Multiplicative decomposition | R²=0.167 for trend; seasonal indices 0.41–1.74 |
+### Italy unemployment - why forecast it at all?
+Unemployment forecasts feed directly into social policy planning — knowing whether a trend is likely to continue tells governments and analysts how much runway they have before needing to act. Here, the unemployment rate fell steadily from 9.1% to 5.5% between 2022 and 2026, with no seasonal pattern strong enough to matter. That simplicity is itself informative: because differencing the series once removed all statistical structure, the best model turned out to be a random walk (**ARIMA(0,1,0)**) — in plain terms, the model's honest best guess for next month is simply this month's value, and it can't detect any repeating cycle to exploit. Confirmed as the best fit among 6 candidate models (AIC=69.62) and validated on residuals (Ljung-Box p=0.247, meaning no leftover structure was missed).
 
+### Kalamata rainfall - separating seasonal noise from real change
+For climate data, the key practical question is: is the pattern changing, or just repeating? Here it's clearly the latter — rainfall swings from wet winters to dry summers every single year (s=12 months), a signature of the Mediterranean climate, with no evidence of a long-term shift. Modeling this required a **SARIMA(0,0,0)(1,1,1)[12]** model, which explicitly encodes that yearly repeat pattern rather than treating each month as independent. It outperformed R's automatic model-selection tool (`auto.arima`) on both error variance and residual whiteness (Ljung-Box p=0.867 vs. 0.053) — worth noting because the automatic tool actually got this one wrong, which is a useful caution about not blindly trusting automated model selection.
+
+### Beer sales - telling growth apart from seasonal noise
+For a business, the question isn't just "are sales going up" — it's "are sales going up *after* accounting for the fact that summer is always busier." Raw sales numbers here are dominated by that seasonal swing (summer sales run 74% above average, winter 59% below), which would make a naive year-over-year comparison misleading. After mathematically removing that seasonal effect (classical multiplicative decomposition), a modest underlying growth trend remains (+0.082M bottles/quarter) — but it's not yet statistically distinguishable from noise (p=0.116), meaning there isn't enough evidence yet to say the business is reliably growing rather than just fluctuating. The cyclical swings that are left over (up to +36% or -46% in a given quarter) point to outside economic factors — competitor pricing, income shifts — that neither trend nor season explain.
+
+### Summary table
+
+| Series | Finding | Model | Validation |
+|---|---|---|---|
+| Italy unemployment | Steady decline, 9.1% → 5.5% (2022–2026); no seasonality detected | ARIMA(0,1,0) | AIC=69.62 (best of 6); Ljung-Box p=0.247 |
+| Kalamata rainfall | Strong Mediterranean seasonal cycle (wet winters, dry summers); no long-term trend | SARIMA(0,0,0)(1,1,1)[12] | Ljung-Box p=0.867 (vs p=0.053 for auto.arima) |
+| Beer sales | Summer sales 74% above average, winter 59% below; weak, not-yet-significant growth trend (p=0.116) | Multiplicative decomposition | R²=0.167 for trend fit |
+
+Full methodology, all 20 figures, statistical test outputs, and detailed discussion are in the knitted HTML reports under [`notebooks_html/`](notebooks_html/) — open any of the three directly in a browser.
 
 ## Repository structure
 
 ```
 timeseries-r-analysis/
 ├── README.md
-├── LICENSE                       # MIT (applies to code, not report.pdf)
+├── LICENSE                       # MIT
 ├── .gitignore
 ├── exercises/
 │   ├── 01_Askisi1_Anergia_Italias.Rmd        # ARIMA — Italian unemployment
@@ -81,7 +93,7 @@ Exercises 1 and 2 require their respective data files (see **Data** above) to be
 
 ## Author
 
-MSc coursework project — Information Systems & Services, University of Piraeus, 2026.
+MSc coursework project - Information Systems & Services, University of Piraeus, 2026.
 
 ## References
 
