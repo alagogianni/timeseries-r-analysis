@@ -1,0 +1,12 @@
+# Raw datasets (download separately, see README)
+italy_unemployment.xlsx
+emi.csv
+
+# R
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+
+# OS
+.DS_Store
