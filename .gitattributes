@@ -1,0 +1,3 @@
+# These are knitted/generated output, not source code —
+# exclude them from GitHub's language statistics bar.
+notebooks_html/*.html linguist-generated=true
